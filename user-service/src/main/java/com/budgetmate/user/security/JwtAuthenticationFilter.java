@@ -28,11 +28,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String requestURI = request.getRequestURI();
         logger.debug("[JwtAuthenticationFilter] 요청 URI: {}", requestURI);
 
-        if (requestURI.equals("/user/login") || requestURI.equals("/user/signup")) {
+        if (
+                requestURI.equals("/user/login") ||
+                        requestURI.equals("/user/signup") ||
+                        requestURI.equals("/user/send-code") ||         // 인증코드 요청 허용
+                        requestURI.equals("/user/verify-code")          // 인증코드 검증 허용
+        ) {
             logger.debug("[JwtAuthenticationFilter] 인증 예외 경로 - 필터 건너뜀: {}", requestURI);
             filterChain.doFilter(request, response);
             return;
         }
+
 
         String token = jwtTokenProvider.resolveToken(request);
         logger.debug("[JwtAuthenticationFilter] 추출한 토큰: {}", token);

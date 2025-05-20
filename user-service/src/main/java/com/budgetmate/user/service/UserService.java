@@ -41,4 +41,10 @@ public class UserService {
 
         return jwtTokenProvider.createToken(user.getEmail(), user.getRoles());
     }
+
+    // 이메일 중복 확인
+    public boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
 }
