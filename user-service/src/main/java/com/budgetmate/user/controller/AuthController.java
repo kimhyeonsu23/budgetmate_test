@@ -2,8 +2,12 @@ package com.budgetmate.user.controller;
 
 import com.budgetmate.user.dto.LoginRequest;
 import com.budgetmate.user.dto.SignupRequest;
+import com.budgetmate.user.dto.SocialLoginResult;
+import com.budgetmate.user.dto.SocialUserInfo;
+import com.budgetmate.user.entity.LoginType;
 import com.budgetmate.user.entity.User;
 import com.budgetmate.user.security.CustomUserDetails;
+import com.budgetmate.user.security.JwtTokenProvider;
 import com.budgetmate.user.service.EmailService;
 import com.budgetmate.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -23,19 +27,16 @@ public class AuthController {
 
     private final UserService userService;
     private final EmailService emailService;
+    private final JwtTokenProvider jwtTokenProvider;
 
-    // 이메일 -> 인증코드 + 생성시각 저장
     private final Map<String, VerificationInfo> verificationCodes = new ConcurrentHashMap<>();
-    private static final long CODE_EXPIRE_TIME = 5 * 60 * 1000; // 5분
+    private static final long CODE_EXPIRE_TIME = 5 * 60 * 1000;
 
-    //  인증코드 발송
-    //  인증코드 발송
     @PostMapping("/send-code")
     public ResponseEntity<?> sendCode(@RequestBody Map<String, String> request) {
         String email = request.get("email");
         log.info("[AuthController] /send-code 요청 들어옴 → {}", email);
 
-        // 이미 가입된 이메일인지 확인
         if (userService.existsByEmail(email)) {
             return ResponseEntity.badRequest().body(Map.of(
                     "success", false,
@@ -44,12 +45,10 @@ public class AuthController {
         }
 
         String code = emailService.sendVerificationCode(email);
-        verificationCodes.put(email, new VerificationInfo(code));  // ✅ 여기를 이렇게!
+        verificationCodes.put(email, new VerificationInfo(code));
         return ResponseEntity.ok(Map.of("success", true, "message", "이메일 전송 완료"));
     }
 
-
-    //  인증코드 확인
     @PostMapping("/verify-code")
     public ResponseEntity<?> verifyCode(@RequestBody Map<String, String> request) {
         String email = request.get("email");
@@ -73,7 +72,6 @@ public class AuthController {
         return ResponseEntity.ok(Map.of("verified", true));
     }
 
-    //  회원가입
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody SignupRequest request) {
         if (userService.existsByEmail(request.getEmail())) {
@@ -84,21 +82,71 @@ public class AuthController {
         }
 
         User newUser = userService.signup(request);
+        String token = jwtTokenProvider.createToken(newUser.getEmail(), newUser.getRoles());
+
         return ResponseEntity.ok(Map.of(
                 "success", true,
-                "user", newUser
+                "user", newUser,
+                "token", token
         ));
     }
 
-
-    //  로그인
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         String token = userService.login(request);
         return ResponseEntity.ok(Map.of("token", token));
     }
 
-    //   내 정보 조회
+    @GetMapping("/oauth/kakao")
+    public ResponseEntity<?> kakaoLogin(@RequestParam String code) {
+        try {
+            SocialLoginResult result = userService.kakaoLoginAndGetUser(code);
+
+            if (result.isRequiresConsent()) {
+                return ResponseEntity.ok(Map.of(
+                        "requiresConsent", true,
+                        "email", result.getUser().getEmail(),
+                        "userName", result.getUser().getUserName()
+                ));
+            }
+
+            String token = jwtTokenProvider.createToken(result.getUser().getEmail(), result.getUser().getRoles());
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", token,
+                    "email", result.getUser().getEmail(),
+                    "userName", result.getUser().getUserName()
+            ));
+        } catch (Exception e) {
+            log.error("카카오 로그인 처리 중 오류 발생", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "카카오 로그인 실패"));
+        }
+    }
+
+    @GetMapping("/oauth/google")
+    public ResponseEntity<?> googleLogin(@RequestParam String code) {
+        try {
+            SocialLoginResult result = userService.googleLoginAndGetUser(code);
+
+            if (result.isRequiresConsent()) {
+                return ResponseEntity.ok(Map.of(
+                        "requiresConsent", true,
+                        "email", result.getUser().getEmail(),
+                        "userName", result.getUser().getUserName()
+                ));
+            }
+
+            String token = jwtTokenProvider.createToken(result.getUser().getEmail(), result.getUser().getRoles());
+            return ResponseEntity.ok(Map.of(
+                    "accessToken", token,
+                    "email", result.getUser().getEmail(),
+                    "userName", result.getUser().getUserName()
+            ));
+        } catch (Exception e) {
+            log.error("구글 로그인 실패", e);
+            return ResponseEntity.badRequest().body(Map.of("error", "구글 로그인 실패"));
+        }
+    }
+
     @GetMapping("/me")
     public ResponseEntity<?> getMyInfo(@AuthenticationPrincipal CustomUserDetails userDetails) {
         User user = userDetails.getUser();
@@ -109,8 +157,41 @@ public class AuthController {
                 "roles", user.getRoles()
         ));
     }
+    @PostMapping("/confirm-social")
+    public ResponseEntity<?> confirmSocial(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String loginTypeStr = request.get("loginType");
 
-    // 이메일 인증코드 + 생성시간 담는 클래스
+        User user = userService.findByEmail(email);
+
+        if (user.getLoginType() != LoginType.LOCAL) {
+            return ResponseEntity.badRequest().body(Map.of("error", "이미 소셜 로그인 계정입니다."));
+        }
+
+        LoginType typeToUpdate;
+        try {
+            typeToUpdate = LoginType.valueOf(loginTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "유효하지 않은 로그인 타입입니다."));
+        }
+
+        User updated = userService.confirmSocialLink(
+                SocialUserInfo.builder()
+                        .id(user.getSocialId()) // ← 이건 프론트에서 넘겨줄 수도 있음
+                        .email(user.getEmail())
+                        .name(user.getUserName())
+                        .build(),
+                typeToUpdate
+        );
+
+        String token = jwtTokenProvider.createToken(updated.getEmail(), updated.getRoles());
+        return ResponseEntity.ok(Map.of(
+                "accessToken", token,
+                "email", updated.getEmail(),
+                "userName", updated.getUserName()
+        ));
+    }
+
     private static class VerificationInfo {
         private final String code;
         private final long createdAt;

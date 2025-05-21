@@ -30,11 +30,15 @@ public class SecurityConfig {
         http
                 .cors(Customizer.withDefaults()) //  CORS 설정 활성화
                 .csrf(csrf -> csrf.disable())
-                .httpBasic(Customizer.withDefaults())
+                .httpBasic(httpBasic -> httpBasic.disable())
                 .formLogin(form -> form.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/user/signup", "/user/login", "/user/send-code", "/user/verify-code").permitAll()
+                        .requestMatchers(
+                                "/user/signup", "/user/login",
+                                "/user/send-code", "/user/verify-code",
+                                "/user/oauth/kakao","/user/oauth/google","/user/confirm-social"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
