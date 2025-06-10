@@ -44,12 +44,13 @@ public class JwtTokenProvider {
 	}
 
 	//  토큰 생성
-	public String createToken(String email, List<String> roles) {
+	public String createToken(Long id, String email, List<String> roles) {
 		Date now = new Date();
 		Date expiry = new Date(now.getTime() + tokenValidTime);
 
 		return Jwts.builder().subject(email)
 				.claim("roles", roles)
+				.claim("id", id)
 				.issuedAt(now).expiration(expiry).signWith(key).compact();
 	}
 

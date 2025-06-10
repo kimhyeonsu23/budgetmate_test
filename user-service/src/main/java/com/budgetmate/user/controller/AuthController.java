@@ -86,6 +86,7 @@ public class AuthController {
 
             // 2) 토큰 생성 시 ● 이메일과 Roles 목록( List<String> )을 넘겨준다
             String token = jwtTokenProvider.createToken(
+                    newUser.getId(),
                     newUser.getEmail(),
                     newUser.getRoles()
             );
@@ -105,17 +106,18 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-
+// LoginResponse : userId, token
         User user = userService.authenticate(request.getEmail(), request.getPassword());
         if (user == null) {
             return ResponseEntity.status(401).build();
         }
 
         String token = jwtTokenProvider.createToken(
+                user.getId(),
                 user.getEmail(),
                 user.getRoles()
         );
-
+        System.out.println("유저 컨트롤러 : 로그인 메서드 - 토큰 발급 / 유저 아이디 : " + user.getId());
         return ResponseEntity.ok(new LoginResponse(user.getId(), token));
     }
 
@@ -209,6 +211,7 @@ public class AuthController {
             User user = result.getUser();
             // "카카오 로그인" 이후에도 createToken 호출 시 email과 roles 리스트를 넘겨준다
             String token = jwtTokenProvider.createToken(
+                    result.getUser().getId(),
                     result.getUser().getEmail(),
                     result.getUser().getRoles()
             );
@@ -238,6 +241,7 @@ public class AuthController {
             User user=result.getUser();
             // "구글 로그인" 이후에도 createToken 호출 시 email과 roles 리스트를 넘겨준다
             String token = jwtTokenProvider.createToken(
+                    result.getUser().getId(),
                     result.getUser().getEmail(),
                     result.getUser().getRoles()
             );
@@ -295,6 +299,7 @@ public class AuthController {
 
         // Social 연결 후에도 createToken 호출 시 email과 roles 리스트를 넘겨준다
         String token = jwtTokenProvider.createToken(
+                updated.getId(),
                 updated.getEmail(),
                 updated.getRoles()
         );
