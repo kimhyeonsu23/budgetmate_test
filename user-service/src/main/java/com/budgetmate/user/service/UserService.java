@@ -161,7 +161,7 @@ public class UserService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new RuntimeException("비밀번호가 일치하지 않습니다.");
         }
-        return jwtTokenProvider.createToken(user.getEmail(), user.getRoles());
+        return jwtTokenProvider.createToken(user.getId(), user.getEmail(), user.getRoles());
     }
 
     public boolean existsByEmail(String email) {
@@ -491,8 +491,10 @@ public class UserService {
         User user = userRepository.findByEmail(email.trim().toLowerCase())
                 .orElse(null);
         if (user != null && passwordEncoder.matches(password, user.getPassword())) {
+            System.out.println("비밀번호 일치");
             return user;
         }
+        System.out.println("비밀번호 불일치");
         return null;
     }
 

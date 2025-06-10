@@ -57,6 +57,18 @@ spring:
             - Path=/receipt/image/**
           filters:
             - PreserveHostHeader
+        - id: statis-service
+          uri: lb://statis-service
+          predicates:
+            - Path=/statis/**
+          filters:
+            - PreserveHostHeader
+        - id: history-service
+          uri: lb://history-service
+          predicates:
+            - Path=/history/**
+          filters:
+            - PreserveHostHeader
 
       default-filters:
       # JWT 를 쿠키로 주고받으므로 Cookie 헤더 제거 필터 비활성화

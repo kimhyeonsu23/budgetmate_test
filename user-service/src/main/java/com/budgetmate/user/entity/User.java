@@ -33,6 +33,10 @@ public class User implements UserDetails {
     @Builder.Default
     private List<String> roles = new ArrayList<>(List.of("ROLE_USER"));
 
+//    @Column(name = "badge")
+//    @Builder.Default
+//    private int userBadge = 0; // 뱃지 상태를 처음에는 0으로 초기화.
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -70,11 +74,13 @@ public class User implements UserDetails {
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() { return true; }
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = new Date();
-        this.updatedAt = new Date();
+    @PrePersist // entitiy가 처음 저장되기 전(insert전에)자동 호출됨.
+    protected void prePersist() {
+        this.createdAt = new Date(); // 생성일 초기화.
+        this.updatedAt = new Date(); // 수정일 초기화
+        //this.userBadge = 0;
     }
+
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new Date();
