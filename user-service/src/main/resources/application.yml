@@ -1,10 +1,12 @@
 spring:
+  application:
+    name: user-service
+  profiles:
+    active: user-lan-dev
   config:
     import: optional:configserver:http://localhost:8888
-
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:lan}
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+
