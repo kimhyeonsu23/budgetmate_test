@@ -12,7 +12,9 @@ public class CorsConfig implements WebMvcConfigurer {
         registry.addMapping("/**")                 // receipt-service 모든 엔드포인트
                 .allowedOriginPatterns(
                         "http://localhost:5173",
-                        "http://172.20.10.*:5173") // 모바일 IP 대역
+                        "http://localhost:9090",
+                        "http://172.20.10.*:5173", // 모바일 IP 대역
+                        "http://14.63.178.147:9090" )
                 .allowedMethods("*")
                 .allowedHeaders("*")
                 .allowCredentials(true);

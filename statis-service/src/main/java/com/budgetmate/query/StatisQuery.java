@@ -49,7 +49,7 @@ public class StatisQuery {
 	    String sql = "SELECT SUM(total_price) FROM receipt WHERE user_id = ? AND keyword_id = ? AND `date` BETWEEN ? AND ?";
 
 	    for (int i = 0; i < 7; i++) {
-	        Integer price = jdbcTemplate.queryForObject(sql, Integer.class, userId, i + 1, monday, now);
+	        Integer price = jdbcTemplate.queryForObject(sql, Integer.class, userId, i + 1, java.sql.Date.valueOf(monday), java.sql.Date.valueOf(today));
 	        keywordTotal.put(keywordNames[i], (price != null) ? price : 0);
 	    }
 		System.out.println("== getKeywordTotalPrice 실행 ===");
