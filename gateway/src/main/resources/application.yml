@@ -103,7 +103,8 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
     service-url:
-      defaultZone: http://localhost:8761/eureka
+      defaultZone: http://eureka-server-container:8761/eureka
+      # http://localhost:8761/eureka였음.
   instance:
     prefer-ip-address: true
 
