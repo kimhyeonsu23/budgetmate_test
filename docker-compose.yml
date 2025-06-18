@@ -5,8 +5,16 @@ services:
       context: ./eureka-server
     ports:
       - "8761:8761"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     networks:
       - budgetmate-compose
+    depends_on:
+      mysql:
+        condition: service_healthy
 
   config-server:
     container_name: config-server-container
@@ -14,18 +22,33 @@ services:
       context: ./config-server
     ports:
       - "8888:8888"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
+    volumes:
+      - ./config-server/src/main/resources/application-config-docker.yml:/app/config/application.yml
     networks:
       - budgetmate-compose
+
   gateway:
     container_name: gateway-container
     build:
       context: ./gateway
     ports:
       - "8090:8090"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8090"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
     networks:
       - budgetmate-compose
 
@@ -36,13 +59,17 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - eureka-server
-      - mysql
-      - config-server
+      eureka-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=user-docker
     networks:
       - budgetmate-compose
+
   receipt-service:
     container_name: receipt-service-container
     build:
@@ -50,13 +77,17 @@ services:
     ports:
       - "8082:8082"
     depends_on:
-      - eureka-server
-      - config-server
-      - mysql
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=receipt-docker
     networks:
       - budgetmate-compose
+
   statis-service:
     container_name: statis-service-container
     build:
@@ -64,13 +95,17 @@ services:
     ports:
       - "8083:8083"
     depends_on:
-      - eureka-server
-      - config-server
-      - mysql
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=statis-docker
     networks:
       - budgetmate-compose
+
   history-service:
     container_name: history-service-container
     build:
@@ -78,13 +113,17 @@ services:
     ports:
       - "8084:8084"
     depends_on:
-      - eureka-server
-      - config-server
-      - mysql
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     environment:
       - SPRING_PROFILES_ACTIVE=history-docker
     networks:
       - budgetmate-compose
+
   mysql:
     image: mysql:8.0
     container_name: mysql-container
@@ -97,6 +136,11 @@ services:
       - "3306:3306"
     networks:
       - budgetmate-compose
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   budgetmate-compose:
