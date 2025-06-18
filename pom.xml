@@ -1,0 +1,23 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.budgetmate</groupId>
+    <artifactId>budgetmate</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>budgetmate-parent</name>
+
+    <modules>
+        <module>eureka-server</module>
+        <module>config-server</module>
+        <module>gateway</module>
+        <module>user-service</module>
+        <module>receipt-service</module>
+        <module>statis-service</module>
+        <module>history-service</module>
+    </modules>
+
+</project>
