@@ -1,0 +1,63 @@
+name: CI for Budgetmate
+
+on:
+  push:
+    branches: ["main", "dev"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Login to DockerHub
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+    # eureka-server
+      - name: Build eureka-server
+        run: docker build -t khs23/eureka-server:${{ github.sha }} ./eureka-server
+      - name: Push eureka-server
+        run: docker push khs23/eureka-server:${{ github.sha }}
+
+    # gateway
+      - name: Build gateway
+        run: docker build -t khs23/gateway:${{ github.sha }} ./gateway
+      - name: Push gateway
+        run: docker push khs23/gateway:${{ github.sha }}
+
+    # config-server
+      - name: Build config-server
+        run: docker build -t khs23/config-server:${{ github.sha }} ./config-server
+      - name: Push config-server
+        run: docker push khs23/config-server:${{ github.sha }}
+
+    # user-service
+      - name: Build user-service
+        run: docker build -t khs23/user-service:${{ github.sha }} ./user-service
+      - name: Push user-service
+        run: docker push khs23/user-service:${{ github.sha }}
+
+    # receipt-service
+      - name: Build receipt-service
+        run: docker build -t khs23/receipt-service:${{ github.sha }} ./receipt-service
+      - name: Push receipt-service
+        run: docker push khs23/receipt-service:${{ github.sha }}
+
+    # statis-service
+      - name: Build statis-service
+        run: docker build -t khs23/statis-service:${{ github.sha }} ./statis-service
+      - name: Push statis-service
+        run: docker push khs23/statis-service:${{ github.sha }}
+
+    # history-service
+      - name: Build history-service
+        run: docker build -t khs23/history-service:${{ github.sha }} ./history-service
+      - name: Push history-service
+        run: docker push khs23/history-service:${{ github.sha }}
+

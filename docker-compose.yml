@@ -31,7 +31,7 @@ services:
       eureka-server:
         condition: service_healthy
     volumes:
-      - ./config-server/src/main/resources/application-config-docker.yml:/app/config/application.yml
+      - ./config-server-application.yml:/app/config/application.yml
     networks:
       - budgetmate-compose
 

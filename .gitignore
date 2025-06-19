@@ -42,3 +42,4 @@ test-output/
 *.swo
 receipt-service/upload*/
 
+./config-server-application.yml
